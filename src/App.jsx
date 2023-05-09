@@ -1,7 +1,9 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 function App() {
   const formRef = useRef()
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState('stale')
   const [{ page, page_size, total, results }, setResponse] = useState({
     page: 0,
     page_size: 0,
@@ -20,25 +22,37 @@ function App() {
     return `/countries?query=${country}${pageQuery}`
   }
 
+  useEffect(() => {
+    const abortController = new AbortController()
+
+    setStatus('loading')
+    fetch(query, { signal: abortController.signal })
+      .then((response) => {
+        if (response.ok) {
+          return response.json()
+        }
+        return Promise.reject()
+      })
+      .then(setResponse)
+      .catch(console.error)
+      .finally(() => setStatus('stale'))
+
+    return () => {
+      abortController.abort()
+    }
+  }, [query])
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const query = getQuery({ page, page_size })
-
-    fetch(query)
-      .then((res) => res.json())
-      .then(setResponse)
-      .catch(console.error)
+    setQuery(query)
   }
 
   const handleClick = useCallback(
     (e) => {
       const newPage = parseInt(e.target.getAttribute('name'))
       const query = getQuery({ page: newPage, page_size })
-
-      fetch(query)
-        .then((res) => res.json())
-        .then(setResponse)
-        .catch(console.error)
+      setQuery(query)
     },
     [page_size]
   )
