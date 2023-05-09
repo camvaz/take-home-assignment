@@ -4,8 +4,7 @@ function App() {
   const formRef = useRef()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('stale')
-  const [{ page, page_size, total, results }, setResponse] = useState({
-    page: 0,
+  const [{ page_size, total, results }, setResponse] = useState({
     page_size: 0,
     total: 0,
     results: [],
@@ -44,7 +43,7 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const query = getQuery({ page, page_size })
+    const query = getQuery({ page: 1, page_size })
     setQuery(query)
   }
 
@@ -66,29 +65,41 @@ function App() {
         </form>
       </section>
       <section className="results">
-        <div className="results__paging">
-          {Array.from({
-            length: page_size > 0 ? Math.ceil(total / page_size) : 0,
-          }).map((_, i) => (
-            <button key={i} onClick={handleClick} name={i + 1}>
-              {i}
-            </button>
-          ))}
-        </div>
-        <div className="results__list">
-          {results.map(
-            ({ capital, code, continent, flag_4x3, name: countryName }) => (
-              <div className="results__item" key={code}>
-                <img width={48} src={flag_4x3} alt={`${countryName} flag`} />
-                <p>{countryName}</p>
-                <ul>
-                  <li>Continent: {continent}</li>
-                  <li>Capital: {capital}</li>
-                </ul>
-              </div>
-            )
-          )}
-        </div>
+        {status === 'loading' ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <div className="results__paging">
+              {page_size <= 0
+                ? []
+                : Array.from({
+                    length: Math.ceil(total / page_size),
+                  }).map((_, i) => (
+                    <button key={i} onClick={handleClick} name={i + 1}>
+                      {i + 1}
+                    </button>
+                  ))}
+            </div>
+            <div className="results__list">
+              {results.map(
+                ({ capital, code, continent, flag_4x3, name: countryName }) => (
+                  <div className="results__item" key={code}>
+                    <img
+                      width={48}
+                      src={flag_4x3}
+                      alt={`${countryName} flag`}
+                    />
+                    <p>{countryName}</p>
+                    <ul>
+                      <li>Continent: {continent}</li>
+                      <li>Capital: {capital}</li>
+                    </ul>
+                  </div>
+                )
+              )}
+            </div>
+          </>
+        )}
       </section>
     </main>
   )
