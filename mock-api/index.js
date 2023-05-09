@@ -40,10 +40,10 @@ function delayResponse(req, res, next) {
 }
 
 app.use("/flags", express.static("mock-api/flags"));
-app.use("/countries", [
-  simulateErrors,
-  delayResponse
-]);
+// app.use("/countries", [
+//   simulateErrors,
+//   delayResponse
+// ]);
 app.get("/countries", (req, res) => {
   // get the query parameters and set defaults if not defined
   const { query = "", page = 1, page_size = 10 } = req.query;
