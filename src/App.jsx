@@ -56,7 +56,7 @@ function App() {
           {Array.from({
             length: page_size > 0 ? Math.ceil(total / page_size) : 0,
           }).map((_, i) => (
-            <button onClick={handleClick} name={i + 1}>
+            <button key={i} onClick={handleClick} name={i + 1}>
               {i}
             </button>
           ))}
