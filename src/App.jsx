@@ -4,13 +4,13 @@ function App() {
   const formRef = useRef()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('stale')
-  const [{ page_size, total, results }, setResponse] = useState({
+  const [response, setResponse] = useState({
     page_size: 0,
     total: 0,
     results: [],
   })
 
-  const getQuery = (data = { page: 0, page_size: 0 }) => {
+  const getQuery = useCallback((data = { page: 0, page_size: 0 }) => {
     if (!formRef.current) return null
     const formData = new FormData(formRef.current)
     const country = formData.get('country')
@@ -19,42 +19,52 @@ function App() {
     }`
 
     return `/countries?query=${country}${pageQuery}`
-  }
+  }, [])
+
+  const fetchData = useCallback(async (query) => {
+    setStatus('loading')
+    try {
+      const response = await fetch(query)
+      if (!response.ok) throw new Error('Network response was not ok')
+      const data = await response.json()
+      setResponse(data)
+      setStatus('stale')
+    } catch (error) {
+      setStatus('error')
+      console.error('Fetch error: ', error)
+    }
+  }, [])
 
   useEffect(() => {
-    const abortController = new AbortController()
+    if (query) {
+      const abortController = new AbortController()
+      fetchData(query, { signal: abortController.signal })
 
-    setStatus('loading')
-    fetch(query, { signal: abortController.signal })
-      .then((response) => {
-        if (response.ok) {
-          return response.json()
-        }
-        return Promise.reject()
-      })
-      .then(setResponse)
-      .catch(console.error)
-      .finally(() => setStatus('stale'))
-
-    return () => {
-      abortController.abort()
+      return () => {
+        abortController.abort()
+      }
     }
-  }, [query])
+  }, [query, fetchData])
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const query = getQuery({ page: 1, page_size })
-    setQuery(query)
-  }
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault()
+      const query = getQuery({ page: 1, page_size: response.page_size })
+      setQuery(query)
+    },
+    [getQuery, response.page_size]
+  )
 
   const handleClick = useCallback(
     (e) => {
       const newPage = parseInt(e.target.getAttribute('name'))
-      const query = getQuery({ page: newPage, page_size })
+      const query = getQuery({ page: newPage, page_size: response.page_size })
       setQuery(query)
     },
-    [page_size]
+    [getQuery, response.page_size]
   )
+
+  const { page_size, total, results } = response
 
   return (
     <main className="main">
